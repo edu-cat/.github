@@ -31,16 +31,6 @@ on:
         default: ./phpstan.neon.dist
         required: false
         type: string
-      matrix_os:
-        description: "OS to run workflow on. Default is ubuntu-latest"
-        default: ubuntu-latest
-        required: false
-        type: string
-      matrix_php:
-        description: "PHP version to run workflow with. Default is 8.1"
-        default: 8.1
-        required: false
-        type: string
 
 jobs:
   code-analyse:
@@ -51,8 +41,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ ${{ inputs.matrix_os }} ]
-        php-version: [ ${{ inputs.matrix_php }} ]
+        os: [ ubuntu-latest ]
+        php-version: [ 8.1 ]
 
     steps:
       - name: Checkout code
