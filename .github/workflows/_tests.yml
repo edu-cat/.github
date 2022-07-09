@@ -1,0 +1,116 @@
+name: Code Testing
+
+# TODO: code coverage rebuild
+
+on:
+  workflow_call:
+    inputs:
+      cache_key:
+        description: "PHP extensions cache key"
+        required: true
+        type: string
+      extensions:
+        description: "PHP extensions"
+        default: opcache, simplexml, mbstring, intl
+        required: false
+        type: string
+      options:
+        description: "Additional options to composer update command. --dry-run is always set."
+        required: false
+        type: string
+      tools:
+        description: "PHP tools"
+        required: false
+        default: composer, cs2pr, phpstan, phpunit/phpunit, roave/security-advisories:dev-latest, squizlabs/php_codesniffer
+        type: string
+      ini_values:
+        description: "PHP ini values"
+        default: post_max_size=256M, max_execution_time=180, date.timezone=Asia/Tbilisi
+        required: false
+        type: string
+
+jobs:
+  tests:
+    timeout-minutes: 15
+    if: github.event.pull_request.draft == false
+    name: tests
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ ubuntu-latest ]
+        php-version: [ 8.1 ]
+    outputs:
+      min_coverage: ${{ steps.coverage_data.outputs.min_coverage }}
+      actual_coverage: ${{ steps.coverage_data.outputs.actual_coverage }}
+      result_coverage: ${{ steps.coverage_data.outputs.result_coverage }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup cache environment
+        id: ext-cache
+        uses: shivammathur/cache-extensions@v1
+        with:
+          php-version: ${{ matrix.php-version }}
+          extensions: ${{ inputs.extensions }}
+          key: ${{ inputs.cache_key }}
+
+      - name: Cache extensions
+        uses: actions/cache@v3
+        with:
+          path: ${{ steps.ext-cache.outputs.dir }}
+          key: ${{ steps.ext-cache.outputs.key }}
+          restore-keys: ${{ steps.ext-cache.outputs.key }}
+
+      - name: Setup PHP version ${{ matrix.php-version }} on ${{ matrix.os }}
+        id: setup-php
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php-version }}
+          extensions: ${{ inputs.extensions }}
+          tools: ${{ inputs.tools }}
+          coverage: xdebug
+          ini-values: ${{ inputs.ini_values }}
+        env:
+          COMPOSER_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          update: true
+
+      - name: Setup problem matchers for PHPUnit
+        run: echo "::add-matcher::${{ runner.tool_cache }}/phpunit.json"
+
+      - name: Validate composer.json and composer.lock
+        run: composer validate --strict
+
+      - name: Composer Install
+        id: composer-install
+        uses: ramsey/composer-install@v2
+        with:
+          dependency-versions: "locked"
+          composer-options: "--prefer-dist"
+
+      - name: Run test suite
+        run: phpunit
+
+      - name: Get coverage data
+        id: coverage-data
+        run: |
+          highLowerBound=`php ./.github/scripts/code_coverage.php highLowerBound`
+          actualCoverage=`php ./.github/scripts/code_coverage.php actualCoverage`
+          echo "::set-output name=min_coverage::$highLowerBound"
+          echo "::set-output name=actual_coverage::$actualCoverage"
+          echo "::set-output name=result_coverage::$(($actualCoverage < $highLowerBound))"
+
+  code_coverage:
+    name: code-coverage-check
+    runs-on: ubuntu-latest
+    needs: [ tests ]
+
+    steps:
+      - name: Check code coverage
+        id: code_coverage_check
+        if: ${{ needs.tests.outputs.result_coverage != 0 }}
+        run: |
+          echo Your code coverage less than minimum required bound. See build/coverage/html/index.html
+          exit 1
