@@ -12,10 +12,6 @@ on:
         default: opcache, simplexml, mbstring, intl
         required: false
         type: string
-      options:
-        description: "Additional options to composer update command. --dry-run is always set."
-        required: false
-        type: string
       tools:
         description: "PHP tools"
         required: false
