@@ -104,5 +104,8 @@ jobs:
       - name: Code Coverage Check
         if: ${{ always() && steps.coverage-data.outputs.result_coverage != 0 }}
         run: |
-          echo Your code coverage less than minimum required bound. See build/coverage/html/index.html
+          echo Your code coverage \
+          ${{ steps.coverage-data.outputs.actual_coverage }} % less than \
+          ${{ steps.coverage-data.outputs.min_coverage }} % \
+          of minimum required bound. See build/coverage/html/index.html
           exit 1
