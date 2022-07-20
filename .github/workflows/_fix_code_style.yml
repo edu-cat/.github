@@ -37,7 +37,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ ubuntu-latest ]
-        php-version: ${{ inputs.php }}
+        php-version: [ ${{ inputs.php }} ]
 
     steps:
       - name: Checkout code
