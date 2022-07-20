@@ -1,6 +1,4 @@
-name: Code Style
-
-# TODO: get rid of inputs.style_report
+name: Fix Code Style
 
 on:
   workflow_call:
@@ -9,24 +7,20 @@ on:
         description: "PHP extensions cache key"
         required: true
         type: string
-      style_report:
-        description: "Path to auto-generated style report (todo: delete it later)"
-        required: true
-        type: string
       php:
         description: "PHP version to run on"
         required: false
         default: "8.1"
         type: string
+      message:
+        description: "Message for linter commit"
+        required: false
+        default: "Fix code styling"
+        type: string
       extensions:
         description: "PHP extensions"
-        default: simplexml, mbstring
+        default: curl, dom, json, libxml, mbstring
         required: false
-        type: string
-      tools:
-        description: "PHP tools"
-        required: false
-        default: composer, cs2pr, squizlabs/php_codesniffer
         type: string
       ini_values:
         description: "PHP ini values"
@@ -35,10 +29,9 @@ on:
         type: string
 
 jobs:
-  code-style:
+  lint:
     timeout-minutes: 15
-    if: github.event.pull_request.draft == false
-    name: code-style
+    name: linting
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -49,6 +42,9 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
+        with:
+          ref: ${{ github.head_ref }}
+          token: ${{ secrets.PAT }}
 
       - name: Setup cache environment
         id: ext-cache
@@ -71,7 +67,7 @@ jobs:
         with:
           php-version: ${{ matrix.php-version }}
           extensions: ${{ inputs.extensions }}
-          tools: ${{ inputs.tools }}
+          tools: composer, laravel/pint
           coverage: none
           ini-values: ${{ inputs.ini_values }}
         env:
@@ -81,11 +77,10 @@ jobs:
       - name: Setup problem matchers
         run: echo "::add-matcher::${{ runner.tool_cache }}/php.json"
 
-      - name: Check PHP code style
-        continue-on-error: true
-        run: |
-          mkdir -p $(dirname "${{ inputs.style_report }}")
-          phpcs --report-full --report-checkstyle=${{ inputs.style_report }} --standard=PSR12 src/ tests/
+      - name: Run linter
+        run: pint
 
-      - name: Show PHPCS results in PR
-        run: cs2pr ${{ inputs.style_report }}
+      - name: Commit linted files
+        uses: stefanzweifel/git-auto-commit-action@v4
+        with:
+          commit_message: ${{ inputs.message }}

@@ -7,19 +7,24 @@ on:
         description: "PHP extensions cache key"
         required: true
         type: string
+      php:
+        description: "PHP version to run on"
+        required: false
+        default: "8.1"
+        type: string
       extensions:
         description: "PHP extensions"
-        default: opcache, simplexml, mbstring, intl
+        default: mbstring
         required: false
         type: string
       tools:
         description: "PHP tools"
         required: false
-        default: composer, cs2pr, phpstan, phpunit/phpunit, roave/security-advisories:dev-latest, squizlabs/php_codesniffer
+        default: composer, cs2pr, phpstan
         type: string
       ini_values:
         description: "PHP ini values"
-        default: post_max_size=256M, max_execution_time=180, date.timezone=Asia/Tbilisi
+        default: max_execution_time=180, date.timezone=Asia/Tbilisi
         required: false
         type: string
       config_file:
@@ -38,7 +43,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ ubuntu-latest ]
-        php-version: [ 8.1 ]
+        php-version: ${{ inputs.php }}
 
     steps:
       - name: Checkout code
@@ -66,7 +71,7 @@ jobs:
           php-version: ${{ matrix.php-version }}
           extensions: ${{ inputs.extensions }}
           tools: ${{ inputs.tools }}
-          coverage: xdebug
+          coverage: none
           ini-values: ${{ inputs.ini_values }}
         env:
           COMPOSER_TOKEN: ${{ secrets.GITHUB_TOKEN }}
