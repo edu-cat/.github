@@ -98,7 +98,6 @@ jobs:
 
       - name: Get coverage data
         id: coverage-data
-        if: always()
         run: |
           highLowerBound=`php ./.github/scripts/code_coverage.php highLowerBound`
           actualCoverage=`php ./.github/scripts/code_coverage.php actualCoverage`
