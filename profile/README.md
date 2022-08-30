@@ -19,6 +19,9 @@ This platform acts as an educational and training ground for cultivating Youngst
 I was created with love by [Dzianis Kotau - PHP Evangelist](https://dzianiskotau.com/) 
 and [Yana Barantsava - Coolest Designer](https://uhovangoga.ru/). 
 
+All tasks in the course are self-crafted and licenced as intellectual property. If you find these tasks 
+somewhere else, please inform [Dzianis Kotau](mailto:me@dzianiskotau.com).
+
 ## Pre-requirements
 
 1. It's highly recommended to use Ubuntu latest stable edition.
